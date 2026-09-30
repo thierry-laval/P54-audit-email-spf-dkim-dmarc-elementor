@@ -480,6 +480,7 @@ _**N'hésitez pas à contribuer, en ouvrant une issue.**_
 ---
 
 <a id="licence"></a>
+
 ## 📝 Licence
 
 [Licence libre académique 3.0 (AFL-3.0)](https://github.com/thierry-laval/P54-audit-email-spf-dkim-dmarc-elementor/blob/main/LICENSE)
@@ -488,7 +489,6 @@ _**N'hésitez pas à contribuer, en ouvrant une issue.**_
 
 **Outil de Vérification E-mail & Sécurité DNS — Module Elementor** a été créé par **Thierry Laval** : [thierrylaval.dev](https://thierrylaval.dev/).  
 Projet original : [github.com/thierry-laval/P54-audit-email-spf-dkim-dmarc-elementor](https://github.com/thierry-laval/P54-audit-email-spf-dkim-dmarc-elementor).  
-Soutien : [paypal.me/thierrylaval01](https://paypal.me/thierrylaval01?country.x=FR&locale.x=fr_FR).  
 
 Toute œuvre dérivée doit conserver cette mention, le nom de l'auteur et les liens ci-dessus.
 
@@ -497,6 +497,7 @@ Copyright © 2026 Thierry Laval — https://thierrylaval.dev
 ---
 
 <a id="soutien"></a>
+
 ## 💙 Soutien
 
 Si vous appréciez ce projet, vous pouvez me soutenir :
