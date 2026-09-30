@@ -1,0 +1,2731 @@
+<div id="dns-mail-checker">
+
+    <div class="dmc-header">
+
+        <p>
+            Vérifiez simplement la configuration email de votre domaine :
+            MX, SPF, DKIM, DMARC, Reverse DNS, MTA-STS et TLS-RPT.
+        </p>
+
+        <div class="dmc-intro">
+            <strong>À quoi sert ce test ?</strong>
+            <p>
+                Lorsque vous envoyez un email, plusieurs mécanismes permettent
+                de vérifier que le message vient bien de votre domaine et
+                d'améliorer sa délivrabilité.
+            </p>
+            <p>
+                Ce test lit uniquement les informations DNS publiques de votre
+                domaine. Il n'envoie aucun email.
+            </p>
+        </div>
+    </div>
+
+    <form id="dmc-form">
+
+        <div style="display:none;" aria-hidden="true">
+            <input type="text" name="website_url_hp" tabindex="-1" autocomplete="off">
+        </div>
+
+        <div class="dmc-fields">
+
+            <div class="dmc-field">
+                <label for="dmc-domain">
+                    Domaine
+                </label>
+
+                <input
+                    type="text"
+                    id="dmc-domain"
+                    name="domain"
+                    placeholder="exemple.fr"
+                    autocomplete="off"
+                    required
+                >
+            </div>
+
+            <div class="dmc-field">
+                <label for="dmc-selector">
+                    Sélecteur DKIM
+                    <span>(facultatif)</span>
+                </label>
+
+                <input
+                    type="text"
+                    id="dmc-selector"
+                    name="selector"
+                    placeholder="selector1"
+                    autocomplete="off"
+                >
+
+                <small>
+                    Si vous connaissez le sélecteur DKIM utilisé par votre
+                    messagerie, indiquez-le ici.
+                </small>
+            </div>
+
+            <button
+                type="submit"
+                id="dmc-submit"
+            >
+                Tester
+            </button>
+
+        </div>
+
+    </form>
+
+    <div
+        id="dmc-loading"
+        style="display:none;"
+    >
+        Analyse de la configuration DNS en cours…
+    </div>
+
+    <div
+        id="dmc-error"
+        class="dmc-error"
+        style="display:none;"
+    ></div>
+
+    <div
+        id="dmc-results"
+        style="display:none;"
+    ></div>
+
+    <div
+        id="dmc-glossary"
+        style="display:none;"
+    >
+
+        <div class="dmc-glossary-title">
+            Comprendre les principaux termes
+        </div>
+
+        <div class="dmc-glossary-grid">
+
+            <div>
+                <strong>DNS</strong>
+                <p>
+                    Le DNS est l'annuaire d'Internet. Il permet notamment
+                    d'indiquer quels serveurs sont responsables des emails
+                    d'un domaine.
+                </p>
+            </div>
+
+            <div>
+                <strong>MX</strong>
+                <p>
+                    Les enregistrements MX indiquent quels serveurs doivent
+                    recevoir les emails destinés à votre domaine.
+                </p>
+            </div>
+
+            <div>
+                <strong>SPF</strong>
+                <p>
+                    SPF indique quels serveurs ou services sont autorisés
+                    à envoyer des emails pour votre domaine.
+                </p>
+            </div>
+
+            <div>
+                <strong>DKIM</strong>
+                <p>
+                    DKIM ajoute une signature cryptographique aux emails
+                    afin que le serveur destinataire puisse vérifier
+                    qu'ils n'ont pas été modifiés.
+                </p>
+            </div>
+
+            <div>
+                <strong>DMARC</strong>
+                <p>
+                    DMARC indique aux serveurs destinataires quoi faire
+                    lorsqu'un email ne passe pas correctement les contrôles
+                    SPF et DKIM.
+                </p>
+            </div>
+
+            <div>
+                <strong>Reverse DNS</strong>
+                <p>
+                    Le reverse DNS permet de retrouver le nom associé à
+                    une adresse IP. Il est notamment utilisé dans la
+                    réputation des serveurs email.
+                </p>
+            </div>
+
+            <div>
+                <strong>MTA-STS</strong>
+                <p>
+                    MTA-STS permet de demander aux serveurs email d'utiliser
+                    une connexion TLS sécurisée lorsqu'ils communiquent
+                    avec votre domaine.
+                </p>
+            </div>
+
+            <div>
+                <strong>TLS-RPT</strong>
+                <p>
+                    TLS-RPT permet de recevoir des rapports concernant
+                    les problèmes rencontrés lors des connexions TLS
+                    entre serveurs email.
+                </p>
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<style>
+
+#dns-mail-checker {
+    max-width: 100%;
+    font-family: inherit;
+    color: #1f2937;
+}
+
+#dns-mail-checker * {
+    box-sizing: border-box;
+}
+
+.dmc-header {
+    margin-bottom: 28px;
+}
+
+.dmc-header h2 {
+    margin: 0 0 10px;
+    font-size: 30px;
+    line-height: 1.2;
+}
+
+.dmc-header > p {
+    margin: 0;
+    opacity: .75;
+    line-height: 1.6;
+}
+
+.dmc-intro {
+    margin-top: 22px;
+    padding: 20px;
+    border-radius: 10px;
+    background: #eafff9;
+    border: 1px solid #e2e8f0;
+    line-height: 1.6;
+}
+
+.dmc-intro p {
+    margin: 8px 0 0;
+}
+
+.dmc-fields {
+    display: grid;
+    grid-template-columns: 1fr 1fr auto;
+    gap: 15px;
+    align-items: start;
+}
+
+.dmc-field label {
+    display: block;
+    margin-bottom: 7px;
+    font-weight: 600;
+}
+
+.dmc-field {
+    display: flex;
+    flex-direction: column;
+}
+
+.dmc-field label span {
+    font-weight: 400;
+    opacity: .6;
+    font-size: .9em;
+}
+
+.dmc-field small {
+    display: block;
+    margin-top: 6px;
+    font-size: 12px;
+    line-height: 1.4;
+    opacity: .65;
+}
+
+.dmc-field input {
+    width: 100%;
+    height: 48px;
+    padding: 0 14px;
+    border: 1px solid #d6dbe1;
+    border-radius: 7px;
+    background: #fff;
+    font-size: 16px;
+}
+
+.dmc-field input:focus {
+    outline: none;
+    border-color: #2271b1;
+    box-shadow: 0 0 0 2px rgba(34,113,177,.10);
+}
+
+#dmc-submit {
+    height: 48px;
+    padding: 0 28px;
+    border: 0;
+    border-radius: 7px;
+    background: #2271b1;
+    color: #fff;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+#dmc-submit {
+    height: 48px;
+    align-self: start;
+    margin-top: 25px;
+    padding: 0 28px;
+    border: 0;
+    border-radius: 7px;
+    background: #2271b1;
+    color: #fff;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+#dmc-submit:hover {
+    opacity: .9;
+}
+
+#dmc-submit:disabled {
+    opacity: .5;
+    cursor: wait;
+}
+
+#dmc-loading {
+    margin-top: 25px;
+    padding: 18px;
+    border-radius: 8px;
+    background: #f1f5f9;
+    text-align: center;
+}
+
+.dmc-error {
+    margin-top: 25px;
+    padding: 15px;
+    border-radius: 8px;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    color: #b91c1c;
+    line-height: 1.5;
+}
+
+.dmc-summary {
+    margin-top: 30px;
+    padding: 24px;
+    border-radius: 12px;
+    border: 1px solid;
+}
+
+.dmc-summary-ok {
+    background: #ecfdf3;
+    border-color: #bbf7d0;
+}
+
+.dmc-summary-warning {
+    background: #fff7ed;
+    border-color: #fed7aa;
+}
+
+.dmc-summary-error {
+    background: #fef2f2;
+    border-color: #fecaca;
+}
+
+.dmc-summary-title {
+    font-size: 22px;
+    font-weight: 700;
+    margin-bottom: 8px;
+}
+
+.dmc-summary-text {
+    line-height: 1.6;
+}
+
+.dmc-summary-domain {
+    margin-top: 8px;
+    font-family: monospace;
+    font-weight: 600;
+}
+
+.dmc-summary-counts {
+    margin-top: 15px;
+    font-size: 14px;
+}
+
+.dmc-summary-explanation {
+    margin-top: 18px;
+    padding-top: 18px;
+    border-top: 1px solid rgba(0,0,0,.10);
+    line-height: 1.6;
+}
+
+.dmc-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+    margin-top: 20px;
+}
+
+.dmc-card {
+    border: 1px solid #dfe4ea;
+    border-radius: 12px;
+    overflow: hidden;
+    background: #fff;
+}
+
+.dmc-card-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 16px;
+    border-bottom: 1px solid #e5e7eb;
+    font-weight: 700;
+}
+
+.dmc-icon {
+    flex: 0 0 30px;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+}
+
+.dmc-icon-ok {
+    background: #dcfce7;
+    color: #15803d;
+}
+
+.dmc-icon-warning {
+    background: #ffedd5;
+    color: #c2410c;
+}
+
+.dmc-icon-error {
+    background: #fee2e2;
+    color: #b91c1c;
+}
+
+.dmc-card-title {
+    flex: 1;
+}
+
+.dmc-badge {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 5px;
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.dmc-badge-ok {
+    background: #dcfce7;
+    color: #15803d;
+}
+
+.dmc-badge-warning {
+    background: #ffedd5;
+    color: #c2410c;
+}
+
+.dmc-badge-error {
+    background: #fee2e2;
+    color: #b91c1c;
+}
+
+.dmc-card-body {
+    padding: 18px;
+}
+
+.dmc-simple-explanation {
+    margin-bottom: 18px;
+    line-height: 1.6;
+}
+
+.dmc-simple-explanation strong {
+    display: block;
+    margin-bottom: 5px;
+}
+
+.dmc-why {
+    margin: 15px 0;
+    padding: 14px;
+    border-radius: 8px;
+    background: #f8fafc;
+    border: 1px solid #e5e7eb;
+    line-height: 1.55;
+}
+
+.dmc-meaning {
+    margin: 15px 0;
+    padding: 14px;
+    border-radius: 8px;
+    line-height: 1.55;
+}
+
+.dmc-meaning-ok {
+    background: #f0fdf4;
+}
+
+.dmc-meaning-warning {
+    background: #fff7ed;
+}
+
+.dmc-meaning-error {
+    background: #fef2f2;
+}
+
+.dmc-recommendation {
+    margin: 15px 0;
+    padding: 14px;
+    border-left: 4px solid #2271b1;
+    background: #f8fafc;
+    line-height: 1.55;
+}
+
+.dmc-record-title {
+    margin-top: 18px;
+    margin-bottom: 7px;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.dmc-record-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 18px;
+    margin-bottom: 7px;
+}
+
+.dmc-btn-copy {
+    padding: 3px 8px;
+    border-radius: 4px;
+    border: 1px solid #d1d5db;
+    background: #f3f4f6;
+    color: #374151;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.dmc-btn-copy:hover {
+    background: #e5e7eb;
+}
+
+.dmc-btn-copy.copied {
+    background: #dcfce7;
+    border-color: #86efac;
+    color: #15803d;
+}
+
+.dmc-record {
+    padding: 12px;
+    border-radius: 6px;
+    background: #111827;
+    color: #e5e7eb;
+    font-family: monospace;
+    font-size: 13px;
+    line-height: 1.5;
+    word-break: break-all;
+}
+
+.dmc-suggested-box {
+    margin-top: 25px;
+    padding: 20px;
+    border-radius: 10px;
+    background: #f0fdfa;
+    border: 1px solid #ccfbf1;
+}
+
+.dmc-suggested-title {
+    font-size: 17px;
+    font-weight: 700;
+    color: #0f766e;
+    margin-bottom: 12px;
+}
+
+.dmc-suggested-item {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 14px;
+    margin-bottom: 10px;
+}
+
+.dmc-suggested-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.dmc-suggested-badge {
+    background: #0f766e;
+    color: #fff;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 11px;
+}
+
+.dmc-suggested-note {
+    margin-top: 6px;
+    font-size: 12px;
+    color: #64748b;
+}
+
+.dmc-summary-score {
+    margin-top: 10px;
+    font-weight: 700;
+    font-size: 15px;
+    color: #1e293b;
+}
+
+.dmc-details {
+    margin-top: 18px;
+    border-top: 1px solid #e5e7eb;
+    padding-top: 15px;
+}
+
+.dmc-details summary {
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.dmc-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+    margin-top: 12px;
+}
+
+.dmc-table th,
+.dmc-table td {
+    padding: 9px 7px;
+    border-bottom: 1px solid #e5e7eb;
+    text-align: left;
+    vertical-align: top;
+}
+
+.dmc-table th {
+    font-weight: 600;
+    width: 42%;
+}
+
+.dmc-list {
+    margin: 10px 0 0;
+    padding-left: 20px;
+}
+
+.dmc-list li {
+    margin-bottom: 5px;
+}
+
+.dmc-dkim-selector {
+    margin-top: 12px;
+    padding: 12px;
+    border-radius: 7px;
+    background: #f8fafc;
+    border: 1px solid #e5e7eb;
+}
+
+.dmc-glossary {
+    margin-top: 35px;
+    padding: 25px;
+    border-radius: 12px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+}
+
+.dmc-glossary-title {
+    font-size: 21px;
+    font-weight: 700;
+    margin-bottom: 20px;
+}
+
+.dmc-glossary-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.dmc-glossary-grid > div {
+    padding-bottom: 15px;
+}
+
+.dmc-glossary-grid strong {
+    display: block;
+    margin-bottom: 5px;
+}
+
+.dmc-glossary-grid p {
+    margin: 0;
+    line-height: 1.55;
+    opacity: .8;
+}
+
+@media (max-width: 800px) {
+
+    .dmc-fields {
+        grid-template-columns: 1fr;
+    }
+
+    #dmc-submit {
+        width: 100%;
+    }
+
+    .dmc-grid,
+    .dmc-glossary-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .dmc-card-header {
+        flex-wrap: wrap;
+    }
+
+}
+
+.dmc-icon-info {
+    background: #e0f2fe;
+    color: #0369a1;
+}
+
+.dmc-badge-info {
+    background: #e0f2fe;
+    color: #0369a1;
+}
+
+.dmc-meaning-info {
+    background: #f0f9ff;
+    border-left: 4px solid #0284c7;
+}
+
+.dmc-provider-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    border-radius: 6px;
+    color: #166534;
+    font-size: 13px;
+    margin-bottom: 14px;
+}
+
+.dmc-btn-print {
+    padding: 6px 14px;
+    border-radius: 6px;
+    border: 1px solid #cbd5e1;
+    background: #fff;
+    color: #334155;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s ease;
+}
+
+.dmc-btn-print:hover {
+    background: #f8fafc;
+    border-color: #94a3b8;
+    color: #0f172a;
+}
+
+.dmc-bimi-preview {
+    margin-top: 12px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 12px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+}
+
+.dmc-print-header {
+    display: none;
+}
+
+@media print {
+    body {
+        background: #fff !important;
+        color: #000 !important;
+        font-size: 10pt !important;
+        line-height: 1.4 !important;
+    }
+
+    /* Éléments masqués à l'impression */
+    #dmc-form,
+    .dmc-header,
+    .dmc-intro,
+    .dmc-btn-copy,
+    .dmc-btn-print,
+    #dmc-loading,
+    #dmc-error,
+    #dmc-glossary,
+    header, footer, nav,
+    .elementor-location-header,
+    .elementor-location-footer {
+        display: none !important;
+    }
+
+    /* En-tête du rapport imprimé */
+    .dmc-print-header {
+        display: block !important;
+        margin-bottom: 16px;
+        padding-bottom: 10px;
+        border-bottom: 2px solid #0284c7;
+    }
+    .dmc-print-header h1,
+    .dmc-print-header h2 {
+        font-size: 14pt !important;
+        margin: 0 0 3px 0 !important;
+    }
+    .dmc-print-header p,
+    .dmc-print-header small {
+        font-size: 9pt !important;
+        color: #555 !important;
+        margin: 0 !important;
+    }
+
+    /* Taille du score */
+    .dmc-score-wrap { font-size: 11pt !important; }
+    .dmc-score-circle,
+    .dmc-score-wrap strong { font-size: 13pt !important; }
+
+    /* Cartes résultats */
+    .dmc-card {
+        page-break-inside: avoid;
+        break-inside: avoid;
+        border: 1px solid #cbd5e1 !important;
+        box-shadow: none !important;
+        margin-bottom: 12px !important;
+        padding: 10px !important;
+    }
+    .dmc-card h2,
+    .dmc-card h3,
+    .dmc-card-title {
+        font-size: 11pt !important;
+        margin: 0 0 4px 0 !important;
+    }
+    .dmc-card p,
+    .dmc-card li,
+    .dmc-card td,
+    .dmc-card th {
+        font-size: 9pt !important;
+        line-height: 1.3 !important;
+    }
+
+    /* Blocs de code et enregistrements DNS — réduits et word-wrap forcé */
+    .dmc-record,
+    .dmc-code,
+    pre, code {
+        font-size: 7.5pt !important;
+        font-family: 'Courier New', Courier, monospace !important;
+        white-space: pre-wrap !important;
+        word-break: break-all !important;
+        overflow-wrap: break-word !important;
+        background: #f1f5f9 !important;
+        border: 1px solid #e2e8f0 !important;
+        padding: 4px 6px !important;
+        display: block !important;
+        border-radius: 3px !important;
+        max-width: 100% !important;
+    }
+
+    /* Tableaux */
+    table { width: 100% !important; border-collapse: collapse !important; font-size: 8.5pt !important; }
+    th, td { border: 1px solid #cbd5e1 !important; padding: 3px 5px !important; font-size: 8.5pt !important; }
+
+    /* Détails techniques ouverts */
+    .dmc-details { display: block !important; }
+    .dmc-details summary { display: none !important; }
+    .dmc-details > *:not(summary) { display: block !important; }
+
+    /* Grille : colonne unique */
+    .dmc-grid { display: block !important; }
+
+    /* Badges (gardent la couleur) */
+    .dmc-badge,
+    .dmc-badge-ok,
+    .dmc-badge-warning,
+    .dmc-badge-error,
+    .dmc-badge-info,
+    .dmc-provider-badge {
+        font-size: 8pt !important;
+        padding: 1px 4px !important;
+        print-color-adjust: exact !important;
+        -webkit-print-color-adjust: exact !important;
+    }
+
+    /* Suggestions DNS */
+    .dmc-suggested-dns {
+        background: #f0fdf4 !important;
+        border: 1px solid #bbf7d0 !important;
+        padding: 6px !important;
+        font-size: 8.5pt !important;
+    }
+
+    /* Dimensions de la page A4 */
+    @page {
+        margin: 1.5cm 1.8cm;
+        size: A4 portrait;
+    }
+}
+
+</style>
+
+
+<script>
+
+(function () {
+
+    const ENDPOINT =
+        '/wp-content/tools/dns-checker.php';
+
+    const form =
+        document.getElementById('dmc-form');
+
+    const domainInput =
+        document.getElementById('dmc-domain');
+
+    const selectorInput =
+        document.getElementById('dmc-selector');
+
+    const submit =
+        document.getElementById('dmc-submit');
+
+    const loading =
+        document.getElementById('dmc-loading');
+
+    const errorBox =
+        document.getElementById('dmc-error');
+
+    const resultsBox =
+        document.getElementById('dmc-results');
+
+    const glossary =
+        document.getElementById('dmc-glossary');
+
+
+    window.dmcCopy = function (btn, text) {
+        if (!navigator.clipboard) {
+            const ta = document.createElement('textarea');
+            ta.value = text;
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand('copy');
+            document.body.removeChild(ta);
+        } else {
+            navigator.clipboard.writeText(text);
+        }
+        const oldText = btn.textContent;
+        btn.textContent = 'Copié !';
+        btn.classList.add('copied');
+        setTimeout(function () {
+            btn.textContent = oldText;
+            btn.classList.remove('copied');
+        }, 2000);
+    };
+
+    window.dmcPrintReport = function () {
+        const resultsEl = document.getElementById('dmc-results');
+        if (!resultsEl) return;
+
+        const clone = resultsEl.cloneNode(true);
+
+        const buttons = clone.querySelectorAll('.dmc-btn-print, .dmc-btn-copy');
+        for (let i = 0; i < buttons.length; i++) {
+            buttons[i].remove();
+        }
+
+        const details = clone.querySelectorAll('details');
+        for (let i = 0; i < details.length; i++) {
+            details[i].setAttribute('open', 'open');
+        }
+
+        const domainVal = domainInput && domainInput.value ? domainInput.value.trim() : 'rapport';
+
+        const printStyles = `
+            @page {
+                size: A4 portrait;
+                margin: 12mm 15mm;
+            }
+            * {
+                box-sizing: border-box;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+            body {
+                margin: 0;
+                padding: 0;
+                background: #ffffff;
+                color: #1e293b;
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+                font-size: 11px;
+                line-height: 1.45;
+            }
+            .dmc-print-header {
+                display: block !important;
+                margin-bottom: 14px;
+                padding-bottom: 8px;
+                border-bottom: 2px solid #0284c7;
+            }
+            .dmc-summary {
+                padding: 12px;
+                border-radius: 6px;
+                margin-bottom: 14px;
+                border: 1px solid #cbd5e1;
+                page-break-inside: avoid;
+                break-inside: avoid;
+            }
+            .dmc-summary-ok { background: #f0fdf4; border-color: #86efac; }
+            .dmc-summary-warning { background: #fffbeb; border-color: #fde68a; }
+            .dmc-summary-error { background: #fef2f2; border-color: #fecaca; }
+            .dmc-summary-title { font-size: 14px; font-weight: 700; margin-bottom: 3px; }
+            .dmc-summary-domain { font-size: 12px; font-weight: 600; color: #0f172a; margin-bottom: 4px; }
+            .dmc-summary-counts { font-size: 10.5px; color: #475569; margin-bottom: 4px; }
+            .dmc-summary-score { font-size: 12.5px; font-weight: 700; color: #1e3a8a; }
+            .dmc-summary-explanation { font-size: 10.5px; line-height: 1.4; color: #334155; margin-top: 8px; padding-top: 6px; border-top: 1px dashed #cbd5e1; }
+
+            .dmc-suggested-box {
+                padding: 10px 12px;
+                background: #f0fdf4;
+                border: 1px solid #86efac;
+                border-radius: 6px;
+                margin-bottom: 14px;
+                page-break-inside: avoid;
+                break-inside: avoid;
+            }
+            .dmc-suggested-title { font-size: 12px; font-weight: 700; color: #166534; margin-bottom: 4px; }
+            .dmc-suggested-item { margin-bottom: 8px; }
+            .dmc-suggested-item:last-child { margin-bottom: 0; }
+            .dmc-suggested-meta { font-size: 10px; font-weight: 600; color: #334155; margin-bottom: 3px; }
+            .dmc-suggested-badge { display: inline-block; padding: 1px 4px; font-size: 9px; background: #0f766e; color: #fff; border-radius: 3px; }
+            .dmc-suggested-note { font-size: 9.5px; color: #15803d; margin-top: 2px; font-style: italic; }
+
+            .dmc-grid { display: block; }
+            .dmc-card {
+                background: #ffffff;
+                border: 1px solid #cbd5e1;
+                border-radius: 6px;
+                padding: 10px 12px;
+                margin-bottom: 12px;
+                page-break-inside: avoid;
+                break-inside: avoid;
+            }
+            .dmc-card-header {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                margin-bottom: 6px;
+                padding-bottom: 4px;
+                border-bottom: 1px solid #f1f5f9;
+            }
+            .dmc-icon {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                width: 18px;
+                height: 18px;
+                border-radius: 50%;
+                font-size: 10px;
+                font-weight: 700;
+            }
+            .dmc-icon-ok { background: #dcfce7; color: #15803d; }
+            .dmc-icon-warning { background: #fef3c7; color: #b45309; }
+            .dmc-icon-error { background: #fee2e2; color: #b91c1c; }
+            .dmc-icon-info { background: #e0f2fe; color: #0369a1; }
+
+            .dmc-card-title { font-size: 12px; font-weight: 700; color: #0f172a; flex: 1; }
+            .dmc-badge {
+                padding: 1px 6px;
+                font-size: 9px;
+                font-weight: 600;
+                border-radius: 4px;
+            }
+            .dmc-badge-ok { background: #dcfce7; color: #166534; }
+            .dmc-badge-warning { background: #fef3c7; color: #92400e; }
+            .dmc-badge-error { background: #fee2e2; color: #991b1b; }
+            .dmc-badge-info { background: #e0f2fe; color: #075985; }
+
+            .dmc-simple-explanation { margin-bottom: 5px; }
+            .dmc-simple-explanation strong { font-size: 10px; color: #334155; }
+            .dmc-simple-explanation div { font-size: 9.5px; color: #475569; margin-top: 1px; }
+
+            .dmc-why {
+                background: #f8fafc;
+                border-left: 3px solid #94a3b8;
+                padding: 4px 6px;
+                margin-bottom: 5px;
+                font-size: 9.5px;
+                color: #475569;
+            }
+            .dmc-why strong { color: #1e293b; font-size: 10px; }
+
+            .dmc-meaning {
+                padding: 4px 6px;
+                border-radius: 3px;
+                margin-bottom: 5px;
+                font-size: 9.5px;
+            }
+            .dmc-meaning strong { font-size: 10px; }
+            .dmc-meaning-ok { background: #f0fdf4; border-left: 3px solid #22c55e; color: #166534; }
+            .dmc-meaning-warning { background: #fffbeb; border-left: 3px solid #f59e0b; color: #854d0e; }
+            .dmc-meaning-error { background: #fef2f2; border-left: 3px solid #ef4444; color: #991b1b; }
+            .dmc-meaning-info { background: #f0f9ff; border-left: 3px solid #0284c7; color: #0369a1; }
+
+            .dmc-recommendation {
+                background: #eff6ff;
+                border-left: 3px solid #3b82f6;
+                padding: 4px 6px;
+                margin-bottom: 5px;
+                font-size: 9.5px;
+                color: #1e40af;
+            }
+            .dmc-recommendation strong { font-size: 10px; }
+
+            .dmc-record-header {
+                margin-top: 6px;
+                margin-bottom: 2px;
+            }
+            .dmc-record-title { font-size: 9.5px; font-weight: 600; color: #475569; }
+            .dmc-record, pre, code {
+                font-family: Consolas, "Courier New", monospace;
+                font-size: 8px;
+                background: #f8fafc;
+                border: 1px solid #e2e8f0;
+                border-radius: 3px;
+                padding: 4px 6px;
+                color: #0f172a;
+                word-break: break-all;
+                white-space: pre-wrap;
+                overflow-wrap: break-word;
+                display: block;
+                margin-bottom: 5px;
+            }
+
+            .dmc-provider-badge {
+                display: inline-block;
+                padding: 2px 6px;
+                background: #f0fdf4;
+                border: 1px solid #bbf7d0;
+                border-radius: 3px;
+                color: #166534;
+                font-size: 9.5px;
+                margin-bottom: 5px;
+            }
+
+            .dmc-details { display: block !important; margin-top: 6px; }
+            .dmc-details summary { display: none !important; }
+            .dmc-details > *:not(summary) { display: block !important; }
+
+            .dmc-table {
+                width: 100%;
+                border-collapse: collapse;
+                margin-top: 3px;
+                margin-bottom: 5px;
+                font-size: 9px;
+            }
+            .dmc-table th {
+                background: #f1f5f9;
+                border: 1px solid #cbd5e1;
+                padding: 3px 5px;
+                text-align: left;
+                font-weight: 600;
+            }
+            .dmc-table td {
+                border: 1px solid #e2e8f0;
+                padding: 3px 5px;
+            }
+            .dmc-list {
+                margin: 3px 0;
+                padding-left: 16px;
+                font-size: 9px;
+            }
+            .dmc-list li { margin-bottom: 2px; }
+            .dmc-bimi-preview {
+                margin-top: 8px;
+                padding: 8px;
+                background: #f8fafc;
+                border: 1px solid #e2e8f0;
+                border-radius: 6px;
+                display: flex;
+                align-items: center;
+                gap: 10px;
+            }
+            .dmc-bimi-preview img {
+                max-width: 48px;
+                max-height: 48px;
+            }
+        `;
+
+        let frame = document.getElementById('dmc-hidden-print-frame');
+        if (frame) {
+            frame.remove();
+        }
+        frame = document.createElement('iframe');
+        frame.id = 'dmc-hidden-print-frame';
+        frame.style.position = 'fixed';
+        frame.style.right = '0';
+        frame.style.bottom = '0';
+        frame.style.width = '0';
+        frame.style.height = '0';
+        frame.style.border = '0';
+        frame.style.visibility = 'hidden';
+        document.body.appendChild(frame);
+
+        const frameDoc = frame.contentWindow.document;
+        frameDoc.open();
+        frameDoc.write('<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8">');
+        frameDoc.write('<title>Audit Sécurité E-mail - ' + escapeHtml(domainVal) + '</title>');
+        frameDoc.write('<style>' + printStyles + '</style>');
+        frameDoc.write('</head><body>');
+        frameDoc.write(clone.innerHTML);
+        frameDoc.write('</body></html>');
+        frameDoc.close();
+
+        setTimeout(function () {
+            try {
+                frame.contentWindow.focus();
+                frame.contentWindow.print();
+            } catch (err) {
+                window.print();
+            }
+            setTimeout(function () {
+                if (frame && frame.parentNode) {
+                    frame.parentNode.removeChild(frame);
+                }
+            }, 3000);
+        }, 400);
+    };
+
+    function escapeHtml(value) {
+
+        return String(value ?? '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
+
+
+    function statusIcon(status) {
+
+        if (status === 'ok') {
+            return '✓';
+        }
+
+        if (status === 'warning') {
+            return '!';
+        }
+
+        if (status === 'info') {
+            return 'ℹ';
+        }
+
+        return '×';
+    }
+
+
+    function statusLabel(status) {
+
+        if (status === 'ok') {
+            return 'OK';
+        }
+
+        if (status === 'warning') {
+            return 'À surveiller';
+        }
+
+        if (status === 'info') {
+            return 'Optionnel';
+        }
+
+        return 'Erreur';
+    }
+
+
+    function explanation(key) {
+
+        const data = {
+
+            mx: {
+                importance: 'Indispensable',
+                title: 'À quoi servent les MX ?',
+                text:
+                    'C’est l’adresse officielle de votre boîte aux lettres sur Internet. Les enregistrements MX indiquent aux autres serveurs où remettre les emails qui vous sont envoyés.',
+                why:
+                    'Sans MX, vous ne pouvez recevoir aucun email. Et si le nom du serveur MX ne correspond pas à son adresse IP (Reverse DNS / PTR), certains services comme Gmail ou Yahoo peuvent refuser de vous faire confiance.'
+            },
+
+            spf: {
+                importance: 'Indispensable',
+                title: 'À quoi sert le SPF ?',
+                text:
+                    'C’est la liste officielle des facteurs autorisés à distribuer des courriers pour votre domaine (par exemple : votre messagerie Google, Microsoft 365, ou votre serveur web).',
+                why:
+                    'Si un pirate tente d’envoyer des emails en usurpant votre nom, les serveurs destinataires vérifient votre SPF. S’il n’est pas dans la liste, le faux message est rejeté ou envoyé en spam. Attention : la norme limite le SPF à 10 recherches DNS maximum.'
+            },
+
+            dkim: {
+                importance: 'Indispensable',
+                title: 'À quoi sert DKIM ?',
+                text:
+                    'C’est comme un cachet de cire ou une signature manuscrite infalsifiable apposée sur chaque email que vous envoyez. Elle prouve que le message vient bien de vous et n’a pas été modifié en cours de route.',
+                why:
+                    'Les grands services de messagerie (Google, Yahoo, Outlook) exigent désormais une signature DKIM pour accepter vos emails directement dans la boîte de réception principale.'
+            },
+
+            dmarc: {
+                importance: 'Indispensable',
+                title: 'À quoi sert DMARC ?',
+                text:
+                    'C’est le chef d’orchestre de votre sécurité email. Il indique aux boîtes de réception la conduite à tenir si un email prétendant venir de vous échoue aux contrôles SPF et DKIM : le surveiller (p=none), l’isoler en spam (p=quarantine), ou le bloquer totalement (p=reject).',
+                why:
+                    'C’est la seule protection qui bloque net les escrocs voulant utiliser votre nom de domaine pour arnaquer vos clients ou vos proches.'
+            },
+
+            bimi: {
+                importance: 'Optionnel / Marque',
+                title: 'À quoi sert BIMI ?',
+                text:
+                    'BIMI permet d’afficher le logo officiel et vérifié de votre entreprise directement à côté de vos emails dans la boîte de réception de vos destinataires (Gmail, Apple Mail, Yahoo).',
+                why:
+                    'Cela améliore considérablement le taux d’ouverture de vos messages, rassure vos destinataires contre les faux courriers et renforce la visibilité de votre marque. Pour être actif, BIMI exige impérativement que votre politique DMARC soit en quarantaine (à 100%) ou en rejet.'
+            },
+
+            rbl: {
+                importance: 'Indispensable',
+                title: 'À quoi servent les Listes Noires (RBL) ?',
+                text:
+                    'Les RBL (Real-time Blackhole Lists) surveillent en temps réel les serveurs de messagerie émetteurs de spam ou compromis par des logiciels malveillants.',
+                why:
+                    'Si l’adresse IP de votre serveur de messagerie est inscrite sur une liste noire, vos emails légitimes seront systématiquement refusés ou dirigés vers le dossier spam par Gmail, Outlook et Yahoo.'
+            },
+
+            dnssec: {
+                importance: 'Sécurité DNS',
+                title: 'À quoi sert DNSSEC ?',
+                text:
+                    'DNSSEC ajoute une signature cryptographique infalsifiable à l’annuaire DNS de votre domaine.',
+                why:
+                    'Il empêche les cyberattaquants de détourner secrètement l’aiguillage de vos emails ou de falsifier vos règles de sécurité SPF et DMARC par empoisonnement de cache DNS.'
+            },
+
+            dane: {
+                importance: 'Optionnel / Avancé',
+                title: 'À quoi sert DANE / TLSA ?',
+                text:
+                    'DANE lie directement le certificat de chiffrement TLS de vos serveurs de messagerie à vos enregistrements DNS officiels.',
+                why:
+                    'C’est une alternative et un complément de haute sécurité à MTA-STS qui empêche tout piratage ou interception de vos échanges d’emails sécurisés.'
+            },
+
+            mtasts: {
+                importance: 'Optionnel / Avancé',
+                title: 'À quoi sert MTA-STS ?',
+                text:
+                    'C’est un cadenas blindé qui force le chiffrement sécurisé (TLS) entre les serveurs de messagerie pour empêcher toute interception d’emails sur le réseau.',
+                why:
+                    'C’est une protection très poussée utilisée par les grandes banques et institutions. Elle n’est PAS obligatoire pour le fonctionnement normal de vos emails et nécessite un serveur web dédié avec certificat SSL.'
+            },
+
+            tlsrpt: {
+                importance: 'Optionnel / Avancé',
+                title: 'À quoi sert TLS-RPT ?',
+                text:
+                    'C’est un carnet de bord automatisé qui vous prévient par email si un serveur distant a rencontré des difficultés de chiffrement lors d’un échange d’emails avec votre domaine.',
+                why:
+                    'Tout comme MTA-STS, c’est un outil facultatif de surveillance réservé aux administrateurs de très gros réseaux pour détecter des pannes techniques de chiffrement.'
+            }
+
+        };
+
+        return data[key] || {
+            importance: 'Contrôle DNS',
+            title: 'À quoi sert ce contrôle ?',
+            text: 'Ce contrôle analyse une partie de la configuration DNS de votre domaine.',
+            why: 'Une configuration correcte contribue au bon fonctionnement et à la fiabilité de votre messagerie.'
+        };
+    }
+
+
+    function resultMeaning(key, status) {
+
+        const meanings = {
+
+            mx: {
+                ok:
+                    'Vos serveurs de réception et leur adresse inverse (Reverse DNS) sont bien configurés. Votre messagerie est prête à recevoir les courriers.',
+                warning:
+                    'Les serveurs de réception existent, mais un problème a été détecté sur leur adresse inverse (Reverse DNS / PTR), ce qui peut impacter la réputation de votre domaine.',
+                error:
+                    'Aucun serveur MX n’a été trouvé, ou un conflit d’enregistrement CNAME sur la racine a été détecté.'
+            },
+
+            spf: {
+                ok:
+                    'Votre enregistrement SPF est unique, bien configuré et respecte la limite de requêtes DNS.',
+                warning:
+                    'Votre SPF existe, mais certains éléments méritent une attention (par exemple : limite des 10 recherches DNS qui approche, mécanisme déconseillé, ou politique neutre).',
+                error:
+                    'Le SPF est absent, en doublon ou mal configuré (par exemple avec +all qui autorise tout le monde à envoyer pour vous).'
+            },
+
+            dkim: {
+                ok:
+                    'Une ou plusieurs clés DKIM valides ont été trouvées pour signer vos messages.',
+                warning:
+                    'Aucun sélecteur DKIM courant n’a été détecté automatiquement. Si votre messagerie utilise un sélecteur sur mesure, saisissez-le dans le champ ci-dessus pour tester votre clé.',
+                error:
+                    'Le sélecteur DKIM demandé n’a pas permis de trouver une clé publique valide.'
+            },
+
+            dmarc: {
+                ok:
+                    'Un enregistrement DMARC protecteur est actif sur votre domaine.',
+                warning:
+                    'DMARC est présent mais est en mode surveillance (p=none) ou ne transmet pas de rapports (rua=). Vos emails ne sont pas encore bloqués en cas d’usurpation.',
+                error:
+                    'Aucun enregistrement DMARC n’est configuré. Votre domaine n’a aucune consigne de protection contre l’usurpation.'
+            },
+
+            bimi: {
+                ok:
+                    'Votre enregistrement BIMI est configuré et valide, et votre politique DMARC respecte les critères requis pour afficher votre logo.',
+                warning:
+                    'Un enregistrement BIMI est publié mais nécessite des ajustements (par exemple : politique DMARC trop souple, format du logo, ou absence de certificat VMC).',
+                info:
+                    'BIMI n’est pas configuré. C’est une option facultative réservée aux entreprises souhaitant afficher leur logo officiel dans les messageries.',
+                error:
+                    'L’enregistrement BIMI comporte une erreur de syntaxe.'
+            },
+
+            rbl: {
+                ok:
+                    'Excellente réputation : l’adresse IP de vos serveurs de messagerie est saine et ne figure sur aucune des listes noires réputées testées.',
+                warning:
+                    'Attention : une ou plusieurs adresses IP de vos serveurs de messagerie apparaissent sur une liste noire anti-spam.',
+                error:
+                    'Alerte réputation : vos serveurs de messagerie sont répertoriés sur une liste noire. Vos emails risquent fortement d’être rejetés ou mis en spam.',
+                info:
+                    'Aucune adresse IP de serveur de messagerie n’a pu être testée.'
+            },
+
+            dnssec: {
+                ok:
+                    'DNSSEC est actif : votre zone DNS est signée et protégée cryptographiquement contre les attaques d’usurpation et d’empoisonnement DNS.',
+                info:
+                    'DNSSEC n’est pas activé. Ce n’est pas bloquant pour vos envois d’emails, mais son activation chez votre Registrar renforce la sécurité de votre domaine.'
+            },
+
+            dane: {
+                ok:
+                    'DANE / TLSA est configuré : vos certificats de messagerie sont authentifiés directement par le DNS pour un chiffrement garanti.',
+                info:
+                    'DANE / TLSA n’est pas configuré. Il s’agit d’une sécurité avancée facultative utilisée par les institutions et infrastructures sensibles.'
+            },
+
+            mtasts: {
+                ok:
+                    'MTA-STS est actif et valide : vos connexions email sont protégées par un chiffrement strict forcé.',
+                warning:
+                    'MTA-STS n’est pas configuré. C’est tout à fait normal pour l’immense majorité des sites : ce n’est pas une panne et vos emails fonctionnent parfaitement sans lui.',
+                error:
+                    'La politique MTA-STS existe mais comporte des erreurs techniques dans sa déclaration HTTPS.'
+            },
+
+            tlsrpt: {
+                ok:
+                    'TLS-RPT est configuré et prêt à recevoir les rapports de chiffrement.',
+                warning:
+                    'TLS-RPT n’est pas configuré. C’est une option facultative qui n’a aucun impact négatif sur vos envois d’emails du quotidien.',
+                error:
+                    'La configuration TLS-RPT comporte une erreur.'
+            }
+
+        };
+
+        return meanings[key] &&
+               meanings[key][status]
+            ? meanings[key][status]
+            : 'Le test a terminé son analyse de cet élément.';
+    }
+
+
+    function recommendation(key, status) {
+
+        if (status === 'ok' || status === 'info') {
+
+            return {
+                show: false,
+                text: ''
+            };
+        }
+
+        const recommendations = {
+
+            mx:
+                'Vérifiez dans la zone DNS de votre domaine que les serveurs MX correspondent bien au service de messagerie que vous utilisez, et assurez-vous qu’aucun CNAME n’est configuré sur la racine (@).',
+
+            spf:
+                'Vérifiez la liste des services autorisés à envoyer vos emails et assurez-vous qu’un seul enregistrement SPF est publié.',
+
+            dkim:
+                'Si votre messagerie utilise DKIM, récupérez le sélecteur dans la console d’administration de votre messagerie (Google, Microsoft 365, etc.) puis relancez le test avec ce sélecteur.',
+
+            dmarc:
+                'Publiez un enregistrement DMARC pour surveiller puis bloquer les faux emails envoyés avec votre nom de domaine.',
+
+            bimi:
+                'Si vous souhaitez afficher votre logo dans Gmail et Yahoo, publiez un enregistrement default._bimi avec votre logo au format SVG Tiny P.S. et assurez-vous que DMARC est au minimum en p=quarantine (pct=100) ou p=reject.',
+
+            rbl:
+                'Contactez votre hébergeur ou prestataire de messagerie pour demander le délistage de votre adresse IP ou pour qu’une nouvelle adresse IP saine vous soit attribuée.',
+
+            dnssec:
+                'Activez DNSSEC depuis l’espace client de votre bureau d’enregistrement de domaine (Registrar) pour sécuriser l’authenticité de votre zone DNS.',
+
+            dane:
+                'Aucune action requise. DANE est une sécurité facultative requérant DNSSEC et la publication d’enregistrements TLSA.',
+
+            mtasts:
+                'Aucune action requise. MTA-STS est une sécurité complémentaire réservée aux structures ayant des besoins de très haute sécurité (nécessite d’héberger un sous-domaine https://mta-sts avec un certificat SSL valide).',
+
+            tlsrpt:
+                'Aucune action requise. Si vous n’avez pas d’équipe dédiée pour analyser quotidiennement des rapports techniques de chiffrement, vous pouvez ignorer cet élément.'
+        };
+
+        return {
+            show: true,
+            text:
+                recommendations[key] ||
+                'Vérifiez la configuration DNS correspondante.'
+        };
+    }
+
+
+    function renderCard(key, result) {
+
+        const info =
+            explanation(key);
+
+        const meaning =
+            resultMeaning(
+                key,
+                result.status
+            );
+
+        const advice =
+            recommendation(
+                key,
+                result.status
+            );
+
+        let html = '';
+
+        html +=
+            '<div class="dmc-card">';
+
+        html +=
+            '<div class="dmc-card-header">';
+
+        html +=
+            '<span class="dmc-icon dmc-icon-' +
+            escapeHtml(result.status) +
+            '">' +
+            statusIcon(result.status) +
+            '</span>';
+
+        html +=
+            '<span class="dmc-card-title">' +
+            escapeHtml(result.title) +
+            (info.importance
+                ? ' <span style="font-size:11px;font-weight:normal;opacity:0.65;margin-left:4px;">(' +
+                  escapeHtml(info.importance) +
+                  ')</span>'
+                : '') +
+            '</span>';
+
+        html +=
+            '<span class="dmc-badge dmc-badge-' +
+            escapeHtml(result.status) +
+            '">' +
+            escapeHtml(statusLabel(result.status)) +
+            '</span>';
+
+        html += '</div>';
+
+        html += '<div class="dmc-card-body">';
+
+
+        /*
+         * Explication débutant
+         */
+
+        html +=
+            '<div class="dmc-simple-explanation">';
+
+        html +=
+            '<strong>' +
+            escapeHtml(info.title) +
+            '</strong>';
+
+        html +=
+            '<div>' +
+            escapeHtml(info.text) +
+            '</div>';
+
+        html += '</div>';
+
+
+        /*
+         * Pourquoi
+         */
+
+        html +=
+            '<div class="dmc-why">' +
+            '<strong>Pourquoi est-ce important ?</strong><br>' +
+            escapeHtml(info.why) +
+            '</div>';
+
+
+        /*
+         * Interprétation du résultat
+         */
+
+        html +=
+            '<div class="dmc-meaning dmc-meaning-' +
+            escapeHtml(result.status) +
+            '">' +
+
+            '<strong>Que signifie votre résultat ?</strong><br>' +
+
+            escapeHtml(meaning) +
+
+            '</div>';
+
+
+        /*
+         * Recommandation
+         */
+
+        if (advice.show) {
+
+            html +=
+                '<div class="dmc-recommendation">' +
+
+                '<strong>Que faire ?</strong><br>' +
+
+                escapeHtml(advice.text) +
+
+                '</div>';
+        }
+
+
+        /*
+         * Enregistrement DNS
+         */
+
+        if (result.record) {
+
+            html +=
+                '<div class="dmc-record-header">' +
+                '<div class="dmc-record-title">' +
+                'Enregistrement DNS détecté' +
+                '</div>' +
+                '<button type="button" class="dmc-btn-copy" onclick="dmcCopy(this, ' +
+                JSON.stringify(result.record) +
+                ')">Copier</button>' +
+                '</div>';
+
+            html +=
+                '<div class="dmc-record">' +
+                escapeHtml(result.record) +
+                '</div>';
+        }
+
+        if (result.suggested_dns) {
+
+            html +=
+                '<div class="dmc-record-header" style="margin-top:14px;">' +
+                '<div class="dmc-record-title" style="color:#0f766e;">⚡ Enregistrement recommandé à publier</div>' +
+                '<button type="button" class="dmc-btn-copy" onclick="dmcCopy(this, ' +
+                JSON.stringify(result.suggested_dns.value) +
+                ')">Copier la valeur</button>' +
+                '</div>';
+
+            html +=
+                '<div class="dmc-suggested-meta" style="font-size:12px;margin-bottom:4px;">' +
+                '<span class="dmc-suggested-badge">' +
+                escapeHtml(result.suggested_dns.type) +
+                '</span> ' +
+                '<span>Hôte : <code>' +
+                escapeHtml(result.suggested_dns.name) +
+                '</code></span>' +
+                '</div>';
+
+            html +=
+                '<div class="dmc-record" style="background:#042f2e;color:#ccfbf1;">' +
+                escapeHtml(result.suggested_dns.value) +
+                '</div>';
+
+            if (result.suggested_dns.note) {
+                html +=
+                    '<div class="dmc-suggested-note">💡 ' +
+                    escapeHtml(result.suggested_dns.note) +
+                    '</div>';
+            }
+        }
+
+
+        /*
+         * Détails techniques
+         */
+
+        html +=
+            '<details class="dmc-details">';
+
+        html +=
+            '<summary>Afficher les détails techniques</summary>';
+
+
+        /*
+         * MX
+         */
+
+        if (
+            key === 'mx' &&
+            result.details &&
+            result.details.servers
+        ) {
+
+            if (result.details.provider) {
+                html +=
+                    '<div class="dmc-provider-badge">' +
+                    '📬 Messagerie détectée : <strong>' +
+                    escapeHtml(result.details.provider.name) +
+                    '</strong></div>';
+            }
+
+            html +=
+                '<table class="dmc-table">';
+
+            html +=
+                '<tr>' +
+                '<th>Priorité</th>' +
+                '<th>Serveur</th>' +
+                '<th>Reverse DNS</th>' +
+                '</tr>';
+
+            result.details.servers.forEach(
+                function (server) {
+
+                    let reverse = '';
+
+                    if (server.addresses) {
+
+                        server.addresses.forEach(
+                            function (address) {
+
+                                let fcrdnsBadge = '';
+                                if (address.has_ptr && address.fcrdns !== undefined) {
+                                    fcrdnsBadge = address.fcrdns
+                                        ? ' <span class="dmc-badge dmc-badge-ok">✓ FCrDNS</span>'
+                                        : ' <span class="dmc-badge dmc-badge-warning">! FCrDNS non confirmé</span>';
+                                }
+
+                                reverse +=
+                                    '<div>' +
+                                    escapeHtml(address.ip) +
+                                    ' → ' +
+
+                                    (
+                                        address.ptr
+                                            ? escapeHtml(address.ptr) + fcrdnsBadge
+                                            : '<span class="dmc-badge dmc-badge-warning">PTR absent</span>'
+                                    ) +
+
+                                    '</div>';
+                            }
+                        );
+                    }
+
+                    html +=
+                        '<tr>' +
+                        '<td>' +
+                        escapeHtml(
+                            server.priority
+                        ) +
+                        '</td>' +
+
+                        '<td>' +
+                        escapeHtml(
+                            server.host
+                        ) +
+                        '</td>' +
+
+                        '<td>' +
+                        reverse +
+                        '</td>' +
+
+                        '</tr>';
+                }
+            );
+
+            html += '</table>';
+        }
+
+
+        /*
+         * SPF
+         */
+
+        if (
+            key === 'spf' &&
+            result.details
+        ) {
+
+            html +=
+                '<table class="dmc-table">';
+
+            html +=
+                '<tr>' +
+                '<th>Recherches DNS estimées</th>' +
+                '<td>' +
+                escapeHtml(
+                    result.details.lookups
+                ) +
+                ' / ' +
+                escapeHtml(
+                    result.details.limit
+                ) +
+                '</td>' +
+                '</tr>';
+
+            html +=
+                '<tr>' +
+                '<th>Directive finale</th>' +
+                '<td>' +
+                escapeHtml(
+                    result.details.all ||
+                    'non définie'
+                ) +
+                '</td>' +
+                '</tr>';
+
+            html += '</table>';
+
+            if (
+                result.details.mechanisms
+            ) {
+
+                html +=
+                    '<details class="dmc-details">' +
+                    '<summary>Voir les mécanismes SPF</summary>' +
+                    '<ul class="dmc-list">';
+
+                result.details.mechanisms.forEach(
+                    function (item) {
+
+                        html +=
+                            '<li>' +
+                            escapeHtml(
+                                item.qualifier +
+                                item.name +
+                                (
+                                    item.value
+                                        ? ':' +
+                                          item.value
+                                        : ''
+                                )
+                            ) +
+                            (item.lookups ? ' <span style="opacity:.7;font-size:11px;">(+1 DNS)</span>' : '') +
+                            '</li>';
+                    }
+                );
+
+                html +=
+                    '</ul></details>';
+            }
+
+            if (
+                result.details.includes_tree &&
+                result.details.includes_tree.length > 0
+            ) {
+
+                html +=
+                    '<details class="dmc-details" style="margin-top:8px;">' +
+                    '<summary>Voir l’arborescence des inclusions (includes)</summary>' +
+                    '<ul class="dmc-list">';
+
+                result.details.includes_tree.forEach(
+                    function (inc) {
+                        html +=
+                            '<li><strong>' +
+                            escapeHtml(inc.parent) +
+                            '</strong> &rarr; include:<strong>' +
+                            escapeHtml(inc.include) +
+                            '</strong> (' +
+                            escapeHtml(inc.status) +
+                            ')</li>';
+                    }
+                );
+
+                html +=
+                    '</ul></details>';
+            }
+        }
+
+
+        /*
+         * DKIM
+         */
+
+        if (
+            key === 'dkim' &&
+            result.details
+        ) {
+
+            if (
+                result.details.selectors
+            ) {
+
+                html +=
+                    '<table class="dmc-table">';
+
+                html +=
+                    '<tr>' +
+                    '<th>Sélecteur</th>' +
+                    '<th>Type</th>' +
+                    '<th>Taille</th>' +
+                    '<th>État</th>' +
+                    '</tr>';
+
+                result.details.selectors.forEach(
+                    function (item) {
+
+                        let bitsLabel = 'N/A';
+                        if (item.key_bits) {
+                            bitsLabel = escapeHtml(item.key_bits) + ' bits';
+                            if (item.key_bits === 1024) {
+                                bitsLabel += ' <span class="dmc-badge dmc-badge-warning" style="font-size:10px;">déprécié</span>';
+                            }
+                        }
+
+                        html +=
+                            '<tr>' +
+
+                            '<td>' +
+                            escapeHtml(
+                                item.selector
+                            ) +
+                            '</td>' +
+
+                            '<td>' +
+                            escapeHtml(
+                                item.tags &&
+                                item.tags.k
+                                    ? item.tags.k
+                                    : 'rsa'
+                            ) +
+                            '</td>' +
+
+                            '<td>' +
+                            bitsLabel +
+                            '</td>' +
+
+                            '<td>' +
+
+                            '<span class="dmc-badge dmc-badge-' +
+                            escapeHtml(
+                                item.status
+                            ) +
+                            '">' +
+
+                            escapeHtml(
+                                statusLabel(
+                                    item.status
+                                )
+                            ) +
+
+                            '</span>' +
+
+                            '</td>' +
+
+                            '</tr>';
+                    }
+                );
+
+                html += '</table>';
+            }
+
+            if (
+                result.details.selector
+            ) {
+
+                html +=
+                    '<div class="dmc-dkim-selector">' +
+                    '<strong>Sélecteur testé :</strong> ' +
+                    escapeHtml(
+                        result.details.selector
+                    ) +
+                    (result.details.key_bits
+                        ? ' · <strong>Taille :</strong> ' + escapeHtml(result.details.key_bits) + ' bits'
+                        : '') +
+                    '</div>';
+            }
+        }
+
+
+        /*
+         * DMARC
+         */
+
+        if (
+            key === 'dmarc' &&
+            result.details &&
+            result.details.tags
+        ) {
+
+            const tags =
+                result.details.tags;
+
+            html +=
+                '<table class="dmc-table">';
+
+            html +=
+                '<tr>' +
+                '<th>Politique</th>' +
+                '<td>' +
+                escapeHtml(
+                    tags.p ||
+                    'non définie'
+                ) +
+                '</td>' +
+                '</tr>';
+
+            html +=
+                '<tr>' +
+                '<th>Politique sous-domaines</th>' +
+                '<td>' +
+                escapeHtml(
+                    tags.sp ||
+                    'hérite de p'
+                ) +
+                '</td>' +
+                '</tr>';
+
+            html +=
+                '<tr>' +
+                '<th>Pourcentage</th>' +
+                '<td>' +
+                escapeHtml(
+                    tags.pct ||
+                    '100'
+                ) +
+                ' %</td>' +
+                '</tr>';
+
+            html +=
+                '<tr>' +
+                '<th>Alignement DKIM</th>' +
+                '<td>' +
+                escapeHtml(
+                    tags.adkim ||
+                    'r'
+                ) +
+                '</td>' +
+                '</tr>';
+
+            html +=
+                '<tr>' +
+                '<th>Alignement SPF</th>' +
+                '<td>' +
+                escapeHtml(
+                    tags.aspf ||
+                    'r'
+                ) +
+                '</td>' +
+                '</tr>';
+
+            html +=
+                '<tr>' +
+                '<th>Rapports agrégés</th>' +
+                '<td>' +
+                escapeHtml(
+                    tags.rua ||
+                    'non configuré'
+                ) +
+                '</td>' +
+                '</tr>';
+
+            html += '</table>';
+
+            if (result.details.inherited) {
+                html +=
+                    '<div style="margin-top:8px;font-size:12px;color:#1e40af;">' +
+                    'ℹ️ Cet enregistrement DMARC est hérité depuis le domaine parent <code>' +
+                    escapeHtml(result.details.host) +
+                    '</code>.' +
+                    '</div>';
+            }
+
+            if (result.details.external_reports && result.details.external_reports.length > 0) {
+                html +=
+                    '<div style="margin-top:14px;padding:12px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;">' +
+                    '<div style="font-size:13px;font-weight:600;margin-bottom:6px;">Autorisation des rapports externes (RFC 7489) :</div>' +
+                    '<ul class="dmc-list" style="margin-top:0;">';
+                result.details.external_reports.forEach(function (ext) {
+                    html +=
+                        '<li>Domaine <code>@' +
+                        escapeHtml(ext.destination_domain) +
+                        '</code> : ' +
+                        (ext.is_authorized
+                            ? '<span class="dmc-badge dmc-badge-ok">✓ Autorisé</span>'
+                            : '<span class="dmc-badge dmc-badge-warning">! Non autorisé (hôte <code>' + escapeHtml(ext.verify_host) + '</code> manquant)</span>') +
+                        '</li>';
+                });
+                html += '</ul></div>';
+            }
+        }
+
+
+        /*
+         * BIMI
+         */
+
+        if (
+            key === 'bimi' &&
+            result.details
+        ) {
+
+            if (result.details.configured && result.details.logo_url) {
+                html +=
+                    '<div class="dmc-bimi-preview">' +
+                    '<img src="' + escapeHtml(result.details.logo_url) + '" alt="Logo BIMI" style="max-height:48px;max-width:80px;object-fit:contain;background:#fff;border-radius:4px;padding:4px;border:1px solid #cbd5e1;" onerror="this.style.display=\'none\'">' +
+                    '<div>' +
+                    '<div><strong>Logo de marque détecté :</strong> <a href="' + escapeHtml(result.details.logo_url) + '" target="_blank" rel="noopener noreferrer" style="color:#0284c7;text-decoration:underline;">Voir le fichier SVG</a></div>' +
+                    (result.details.cert_url
+                        ? '<div style="font-size:12px;color:#64748b;margin-top:2px;">Certificat VMC : <code>' + escapeHtml(result.details.cert_url) + '</code></div>'
+                        : '<div style="font-size:12px;color:#94a3b8;margin-top:2px;">Aucun certificat VMC associé (nécessaire pour un affichage garanti sur Gmail/Yahoo)</div>') +
+                    '<div style="font-size:12px;margin-top:4px;">Compatibilité DMARC : ' +
+                    (result.details.dmarc_compatible
+                        ? '<span class="dmc-badge dmc-badge-ok">✓ Compatible (DMARC strict)</span>'
+                        : '<span class="dmc-badge dmc-badge-warning">! Incompatible (DMARC doit être en p=quarantine ou p=reject)</span>') +
+                    '</div>' +
+                    '</div>' +
+                    '</div>';
+            }
+        }
+
+
+        /*
+         * MTA-STS
+         */
+
+        if (
+            key === 'mtasts' &&
+            result.details
+        ) {
+
+            if (result.details.url) {
+
+                html +=
+                    '<p>' +
+                    '<strong>URL de la politique :</strong><br>' +
+                    escapeHtml(
+                        result.details.url
+                    ) +
+                    '</p>';
+            }
+
+            if (
+                result.details.mode
+            ) {
+
+                html +=
+                    '<table class="dmc-table">' +
+
+                    '<tr>' +
+                    '<th>Mode</th>' +
+                    '<td>' +
+                    escapeHtml(
+                        result.details.mode
+                    ) +
+                    '</td>' +
+                    '</tr>' +
+
+                    '<tr>' +
+                    '<th>Durée max_age</th>' +
+                    '<td>' +
+                    escapeHtml(
+                        result.details.max_age
+                    ) +
+                    '</td>' +
+                    '</tr>' +
+
+                    '</table>';
+            }
+
+            if (
+                result.details.policy
+            ) {
+
+                html +=
+                    '<div class="dmc-record-title">' +
+                    'Contenu de la politique' +
+                    '</div>' +
+
+                    '<div class="dmc-record">' +
+                    escapeHtml(
+                        result.details.policy
+                    ) +
+                    '</div>';
+            }
+        }
+
+
+        /*
+         * TLS-RPT
+         */
+
+        if (
+            key === 'tlsrpt' &&
+            result.details &&
+            result.details.tags
+        ) {
+
+            html +=
+                '<table class="dmc-table">';
+
+            Object.keys(
+                result.details.tags
+            ).forEach(
+                function (tag) {
+
+                    html +=
+                        '<tr>' +
+
+                        '<th>' +
+                        escapeHtml(tag) +
+                        '</th>' +
+
+                        '<td>' +
+                        escapeHtml(
+                            result.details.tags[tag]
+                        ) +
+                        '</td>' +
+
+                        '</tr>';
+                }
+            );
+
+            html += '</table>';
+        }
+
+
+        /*
+         * Listes Noires (RBL)
+         */
+
+        if (
+            key === 'rbl' &&
+            result.details &&
+            result.details.checks
+        ) {
+            html +=
+                '<table class="dmc-table">' +
+                '<tr>' +
+                '<th>Adresse IP</th>' +
+                '<th>Liste Noire</th>' +
+                '<th>Statut</th>' +
+                '</tr>';
+
+            result.details.checks.forEach(function (c) {
+                html +=
+                    '<tr>' +
+                    '<td><code>' + escapeHtml(c.ip) + '</code></td>' +
+                    '<td>' + escapeHtml(c.rbl) + '</td>' +
+                    '<td>' + (c.is_listed
+                        ? '<span class="dmc-badge dmc-badge-error">❌ Listé (' + escapeHtml(c.return_ip) + ')</span>'
+                        : '<span class="dmc-badge dmc-badge-ok">✓ Propre</span>') +
+                    '</td>' +
+                    '</tr>';
+            });
+
+            html += '</table>';
+        }
+
+
+        /*
+         * DNSSEC
+         */
+
+        if (
+            key === 'dnssec' &&
+            result.details
+        ) {
+            html +=
+                '<p style="margin-bottom:8px;">' +
+                '<strong>Signature cryptographique DNSSEC : </strong>' +
+                (result.details.enabled
+                    ? '<span class="dmc-badge dmc-badge-ok">✓ Activé</span>'
+                    : '<span class="dmc-badge dmc-badge-info">ℹ Non activé</span>') +
+                '</p>';
+
+            if (result.details.ds_records && result.details.ds_records.length > 0) {
+                html +=
+                    '<div class="dmc-record-title">Enregistrement(s) DS (Delegation Signer) :</div>';
+                result.details.ds_records.forEach(function (ds) {
+                    html +=
+                        '<div class="dmc-record">' + escapeHtml(ds) + '</div>';
+                });
+            }
+        }
+
+
+        /*
+         * DANE / TLSA
+         */
+
+        if (
+            key === 'dane' &&
+            result.details
+        ) {
+            html +=
+                '<p style="margin-bottom:8px;">' +
+                '<strong>Authentification DANE / TLSA : </strong>' +
+                (result.details.enabled
+                    ? '<span class="dmc-badge dmc-badge-ok">✓ Configuré</span>'
+                    : '<span class="dmc-badge dmc-badge-info">ℹ Non configuré</span>') +
+                '</p>';
+
+            if (result.details.records && result.details.records.length > 0) {
+                html +=
+                    '<table class="dmc-table">' +
+                    '<tr><th>Serveur MX</th><th>Enregistrement TLSA</th></tr>';
+                result.details.records.forEach(function (rec) {
+                    html +=
+                        '<tr>' +
+                        '<td>' + escapeHtml(rec.host) + '</td>' +
+                        '<td><code>' + escapeHtml(rec.record) + '</code></td>' +
+                        '</tr>';
+                });
+                html += '</table>';
+            }
+        }
+
+
+        /*
+         * Erreurs détectées
+         */
+
+        if (
+            result.details &&
+            result.details.errors &&
+            result.details.errors.length
+        ) {
+
+            html +=
+                '<div class="dmc-meaning dmc-meaning-error">' +
+
+                '<strong>Problèmes détectés :</strong>' +
+
+                '<ul class="dmc-list">';
+
+            result.details.errors.forEach(
+                function (item) {
+
+                    html +=
+                        '<li>' +
+                        escapeHtml(item) +
+                        '</li>';
+                }
+            );
+
+            html +=
+                '</ul></div>';
+        }
+
+
+        /*
+         * Avertissements
+         */
+
+        if (
+            result.details &&
+            result.details.warnings &&
+            result.details.warnings.length
+        ) {
+
+            html +=
+                '<div class="dmc-meaning dmc-meaning-warning">' +
+
+                '<strong>Points à surveiller :</strong>' +
+
+                '<ul class="dmc-list">';
+
+            result.details.warnings.forEach(
+                function (item) {
+
+                    html +=
+                        '<li>' +
+                        escapeHtml(item) +
+                        '</li>';
+                }
+            );
+
+            html +=
+                '</ul></div>';
+        }
+
+
+        html += '</details>';
+
+        html += '</div>';
+        html += '</div>';
+
+        return html;
+    }
+
+
+    form.addEventListener(
+        'submit',
+        async function (event) {
+
+            event.preventDefault();
+
+            errorBox.style.display =
+                'none';
+
+            resultsBox.style.display =
+                'none';
+
+            glossary.style.display =
+                'none';
+
+            loading.style.display =
+                'block';
+
+            submit.disabled =
+                true;
+
+            const data =
+                new FormData();
+
+            data.append(
+                'domain',
+                domainInput.value.trim()
+            );
+
+            data.append(
+                'selector',
+                selectorInput.value.trim()
+            );
+
+            try {
+
+                const response =
+                    await fetch(
+                        ENDPOINT,
+                        {
+                            method: 'POST',
+                            body: data,
+                            credentials: 'same-origin'
+                        }
+                    );
+
+                const result =
+                    await response.json();
+
+                if (
+                    !response.ok ||
+                    !result.success
+                ) {
+
+                    throw new Error(
+                        result.error ||
+                        'Une erreur est survenue.'
+                    );
+                }
+
+
+                let html = '';
+
+                const summaryClass =
+                    'dmc-summary-' +
+                    result.status;
+
+
+                /*
+                 * En-tête d'impression PDF
+                 */
+
+                const printDate = new Date().toLocaleDateString('fr-FR', {
+                    day: 'numeric',
+                    month: 'long',
+                    year: 'numeric'
+                });
+
+                html +=
+                    '<div class="dmc-print-header">' +
+                    '<div style="font-size:22px;font-weight:700;color:#1e3a8a;">Audit de Sécurité E-mail & DNS</div>' +
+                    '<div style="font-size:13px;color:#475569;margin-top:4px;">' +
+                    'Domaine analysé : <strong>' + escapeHtml(result.domain) + '</strong> • Date : ' + escapeHtml(printDate) + ' • Rapport généré avec thierrylaval.dev' +
+                    '</div></div>';
+
+                /*
+                 * Résumé général
+                 */
+
+                html +=
+                    '<div class="dmc-summary ' +
+                    summaryClass +
+                    '">';
+
+                html +=
+                    '<div class="dmc-summary-title">';
+
+                if (
+                    result.status === 'ok'
+                ) {
+
+                    html +=
+                        'Configuration correctement détectée';
+
+                } else if (
+                    result.status === 'warning'
+                ) {
+
+                    html +=
+                        'Configuration en vérification';
+
+                } else {
+
+                    html +=
+                        'Des problèmes ont été détectés';
+                }
+
+                html += '</div>';
+
+
+                html +=
+                    '<div class="dmc-summary-text">' +
+                    'Analyse du domaine :' +
+                    '</div>';
+
+
+                html +=
+                    '<div class="dmc-summary-domain">' +
+                    escapeHtml(
+                        result.domain
+                    ) +
+                    '</div>';
+
+
+                html +=
+                    '<div class="dmc-summary-counts">' +
+
+                    escapeHtml(
+                        result.summary.errors
+                    ) +
+                    ' erreur(s) · ' +
+
+                    escapeHtml(
+                        result.summary.warnings
+                    ) +
+                    ' avertissement(s)' +
+                    '</div>';
+
+                if (result.score !== undefined) {
+                    html +=
+                        '<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-top:10px;">' +
+                        '<div class="dmc-summary-score" style="margin-top:0;">' +
+                        'Score de sécurité email : ' +
+                        escapeHtml(result.score) + ' / 100' +
+                        '</div>' +
+                        '<button type="button" class="dmc-btn-print" onclick="dmcPrintReport()">' +
+                        '🖨️ Imprimer / Exporter en PDF' +
+                        '</button>' +
+                        '</div>';
+                }
+
+
+                /*
+                 * Explication globale
+                 */
+
+                html +=
+                    '<div class="dmc-summary-explanation">';
+
+                if (
+                    result.status === 'ok'
+                ) {
+
+                    html +=
+                        '<strong>En résumé :</strong><br>' +
+                        'Les principaux enregistrements DNS liés à la messagerie ont été trouvés et ne présentent pas d’erreur détectée par ce test. Cela ne garantit toutefois pas à lui seul la délivrabilité de tous les emails.';
+
+                } else if (
+                    result.status === 'warning'
+                ) {
+
+                    html +=
+                        '<strong>En résumé :</strong><br>' +
+                        'La configuration contient des éléments fonctionnels mais certains points méritent une vérification. Ouvrez les résultats ci-dessous pour comprendre précisément lesquels.';
+
+                } else {
+
+                    html +=
+                        '<strong>En résumé :</strong><br>' +
+                        'Un ou plusieurs éléments importants de la configuration email présentent un problème. Les résultats ci-dessous expliquent ce qui a été détecté et indiquent les vérifications à effectuer.';
+                }
+
+                html += '</div>';
+
+                html += '</div>';
+
+
+                /*
+                 * Suggestions globales d'enregistrements DNS
+                 */
+                if (result.suggested_dns && Object.keys(result.suggested_dns).length > 0) {
+                    html +=
+                        '<div class="dmc-suggested-box">' +
+                        '<div class="dmc-suggested-title">⚡ Enregistrements DNS recommandés à publier / corriger</div>' +
+                        '<p style="font-size:13px;color:#64748b;margin:0 0 14px;">Copiez-collez ces enregistrements directement dans la zone DNS de votre hébergeur :</p>';
+
+                    Object.keys(result.suggested_dns).forEach(function(k) {
+                        const sugg = result.suggested_dns[k];
+                        html +=
+                            '<div class="dmc-suggested-item">' +
+                            '<div class="dmc-suggested-meta">' +
+                            '<span class="dmc-suggested-badge">' + escapeHtml(sugg.type) + '</span> ' +
+                            '<span>Hôte : <code>' + escapeHtml(sugg.name) + '</code></span> ' +
+                            '<span style="margin-left:auto;color:#64748b;font-size:12px;">(' + escapeHtml(sugg.category || k) + ')</span>' +
+                            '</div>' +
+                            '<div class="dmc-record" style="background:#042f2e;color:#ccfbf1;display:flex;justify-content:space-between;align-items:center;gap:10px;">' +
+                            '<span>' + escapeHtml(sugg.value) + '</span>' +
+                            '<button type="button" class="dmc-btn-copy" onclick="dmcCopy(this, ' + JSON.stringify(sugg.value) + ')">Copier</button>' +
+                            '</div>';
+                        if (sugg.note) {
+                            html +=
+                                '<div class="dmc-suggested-note">💡 ' + escapeHtml(sugg.note) + '</div>';
+                        }
+                        html += '</div>';
+                    });
+
+                    html += '</div>';
+                }
+
+
+                /*
+                 * Cartes
+                 */
+
+                html +=
+                    '<div class="dmc-grid">';
+
+                Object.keys(
+                    result.results
+                ).forEach(
+                    function (key) {
+
+                        html +=
+                            renderCard(
+                                key,
+                                result.results[key]
+                            );
+                    }
+                );
+
+                html += '</div>';
+
+
+                resultsBox.innerHTML =
+                    html;
+
+                resultsBox.style.display =
+                    'block';
+
+                glossary.style.display =
+                    'block';
+
+
+                resultsBox.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start'
+                });
+
+
+            } catch (error) {
+
+                errorBox.textContent =
+                    error.message ||
+                    'Impossible d’effectuer le test.';
+
+                errorBox.style.display =
+                    'block';
+
+            } finally {
+
+                loading.style.display =
+                    'none';
+
+                submit.disabled =
+                    false;
+            }
+
+        }
+    );
+
+    /*
+     * Prise en compte automatique du paramètre d'URL (?domain=exemple.com)
+     */
+    (function checkUrlParams() {
+        try {
+            const urlParams = new URLSearchParams(window.location.search);
+            const autoDomain = urlParams.get('domain') || urlParams.get('d') || urlParams.get('domaine');
+            const autoSelector = urlParams.get('selector') || urlParams.get('s');
+            if (autoDomain && domainInput) {
+                domainInput.value = autoDomain.trim();
+                if (autoSelector && selectorInput) {
+                    selectorInput.value = autoSelector.trim();
+                }
+                setTimeout(function () {
+                    form.dispatchEvent(new Event('submit', { cancelable: true }));
+                }, 300);
+            }
+        } catch (e) {}
+    })();
+
+})();
+</script>
