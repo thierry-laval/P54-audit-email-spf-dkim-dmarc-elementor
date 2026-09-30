@@ -70,7 +70,7 @@ _`Début du projet le 30/09/2025`_ — Version du script : 2.0.0 (25/09/2026)
 
 Cet outil analyse en profondeur la configuration e-mail publique, la réputation et la sécurité DNS d'un nom de domaine **sans envoyer le moindre e-mail** et **sans stocker aucune donnée**. Il produit un rapport complet et pédagogique, accessible aussi bien aux débutants qu'aux professionnels.
 
-Cette version est spécialement optimisée pour une intégration transparente dans **WordPress via un widget Elementor HTML**, communiquant avec un endpoint backend PHP dédié et sécurisé.
+Cet outil fonctionne exclusivement dans **WordPress via le widget HTML d'Elementor**, en communiquant avec le backend PHP dédié (`dns-checker.php`) hébergé sur votre serveur.
 
 Une mauvaise configuration e-mail peut entraîner :
 
@@ -91,7 +91,6 @@ Une mauvaise configuration e-mail peut entraîner :
 
 ---
 
-<!-- ARCHITECTURE -->
 ## Architecture des fichiers
 
 ```
@@ -105,6 +104,7 @@ P54-audit-email-spf-dkim-dmarc-elementor/
 ```
 
 ### `dns-checker.php`
+
 Le fichier PHP est le **moteur de l'outil**. Il :
 - Reçoit les requêtes HTTP POST depuis le widget
 - Interroge les DNS natifs (MX, SPF, DKIM, DMARC, PTR, RBL)
@@ -117,6 +117,7 @@ Il doit être **déposé sur votre serveur web**, par exemple dans :
 ```
 
 ### `bloc html.html`
+
 Le widget Elementor contient **l'interface utilisateur** :
 - Formulaire de saisie du domaine et du sélecteur DKIM
 - Styles CSS responsive et export PDF vectoriel dédié
@@ -124,7 +125,6 @@ Le widget Elementor contient **l'interface utilisateur** :
 
 ---
 
-<!-- COMMENCER A TRAVAILLER -->
 ## Commencer à travailler
 
 ### Conditions préalables
@@ -168,13 +168,13 @@ Le widget Elementor contient **l'interface utilisateur** :
 4. Cliquez sur **Mettre à jour** ou **Publier**.
 
 **Réglages recommandés pour la mise en page :**
+
 * **Largeur de la section** : Pleine largeur ou largeur contenu (jusqu'à 1000 px).
 * **Padding** : 40 px en haut et en bas.
 * **Fond** : Blanc ou très légèrement grisé (`#f8fafc`).
 
 ---
 
-<!-- FONCTIONNALITÉS -->
 ## Fonctionnalités détaillées
 
 | Contrôle | Niveau | Rôle et vérification |
@@ -193,9 +193,11 @@ Le widget Elementor contient **l'interface utilisateur** :
 ---
 
 <a id="mx-reverse-dns-et-cname-racine"></a>
+
 ### 🔴 MX, Reverse DNS et CNAME racine
 
 **Ce que ça vérifie :**
+
 * La présence d'enregistrements MX dans le DNS du domaine.
 * **Contrôle RFC 1034 sur la racine (@)** : alerte immédiate si un enregistrement CNAME a été configuré sur le domaine principal (ce qui neutralise tous les enregistrements MX et SPF).
 * L'adresse IP (IPv4 et IPv6) associée à chaque serveur MX.
@@ -206,9 +208,11 @@ Le widget Elementor contient **l'interface utilisateur** :
 ---
 
 <a id="spf"></a>
+
 ### 🔴 SPF (Sender Policy Framework)
 
 **Ce que ça vérifie :**
+
 * Présence d'un enregistrement SPF **unique** sous forme de TXT.
 * Détection des **SPF multiples** (erreur critique PermError selon la RFC 7208).
 * **Comptage strict des requêtes DNS** (limite maximale de 10 lookups).
@@ -219,6 +223,7 @@ Le widget Elementor contient **l'interface utilisateur** :
 ---
 
 <a id="dkim"></a>
+
 ### 🔴 DKIM (DomainKeys Identified Mail)
 
 **Ce que ça vérifie :**
@@ -232,9 +237,11 @@ Le widget Elementor contient **l'interface utilisateur** :
 ---
 
 <a id="dmarc"></a>
+
 ### 🔴 DMARC (Domain-based Message Authentication, Reporting & Conformance)
 
 **Ce que ça vérifie :**
+
 * Présence de `_dmarc.domaine.com` ou héritage depuis le domaine parent.
 * Analyse complète des tags : `v`, `p`, `sp`, `pct`, `adkim`, `aspf`, `rua`, `ruf`.
 * **Vérification de l'autorisation des rapports externes (RFC 7489)** : contrôle que les prestataires tiers autorisent bien la réception des rapports.
@@ -248,9 +255,11 @@ Le widget Elementor contient **l'interface utilisateur** :
 ---
 
 <a id="listes-noires-anti-spam-rbl"></a>
+
 ### 🔴 Listes Noires Anti-Spam (RBL / DNSBL)
 
 **Ce que ça vérifie :**
+
 * Interrogation par DNS inverse des adresses IPv4 de vos serveurs de messagerie (MX).
 * Consultation instantanée des principales listes noires publiques :
   * **Spamcop** (`bl.spamcop.net`)
@@ -262,9 +271,11 @@ Le widget Elementor contient **l'interface utilisateur** :
 ---
 
 <a id="dnssec"></a>
+
 ### 🟡 DNSSEC (Domain Name System Security Extensions)
 
 **Ce que ça vérifie :**
+
 * Présence d'enregistrements **DS (Delegation Signer)** dans la zone parente du domaine.
 * Garantit que les enregistrements DNS n'ont pas été falsifiés lors de leur acheminement sur Internet.
 * Affiche les clés DS publiées.
@@ -272,9 +283,11 @@ Le widget Elementor contient **l'interface utilisateur** :
 ---
 
 <a id="bimi"></a>
+
 ### 🟡 BIMI (Brand Indicators for Message Identification)
 
 **Ce que ça vérifie :**
+
 * Présence de `default._bimi.domaine.com`.
 * URL HTTPS du logo SVG au format Tiny P.S.
 * Détection du certificat de marque vérifiée VMC (`a=`).
@@ -284,6 +297,7 @@ Le widget Elementor contient **l'interface utilisateur** :
 ---
 
 <a id="dane--tlsa"></a>
+
 ### 🟡 DANE / TLSA
 
 **Ce que ça vérifie :**
@@ -293,6 +307,7 @@ Le widget Elementor contient **l'interface utilisateur** :
 ---
 
 <a id="mta-sts--tls-rpt"></a>
+
 ### 🟡 MTA-STS & TLS-RPT
 
 * **MTA-STS** : Vérifie l'enregistrement DNS `_mta-sts` et télécharge le fichier HTTPS `https://mta-sts.domaine.com/.well-known/mta-sts.txt` (analyse du mode `enforce`/`testing`, du `max_age` et de la concordance des MX).
@@ -302,32 +317,20 @@ Le widget Elementor contient **l'interface utilisateur** :
 
 ## Nouvelles fonctionnalités
 
-* **Architecture séparée Widget / API** : parfaite intégration dans Elementor avec un backend PHP léger.
-* **Export PDF isolé & propre** : un système d'impression vectoriel dédié qui extrait le rapport sans interférence de thème.
-* **Support des paramètres d'URL** : pré-remplissage et analyse instantanée via liens directs (`?domain=...`).
+* **Architecture dédiée Widget Elementor / API** : conçu spécifiquement pour le widget HTML Elementor avec un backend PHP léger.
+* **Export PDF isolé & propre** : un système d'impression vectoriel dédié qui extrait le rapport sans interférence de thème WordPress.
 * **Arborescence graphique du SPF** : visualisation pas à pas de chaque `include:` et du nombre exact de requêtes DNS consommées.
 
 ---
 
 ## Utilisation
 
-### Lancement automatique via URL
+Renseignez le nom de domaine à analyser (ex: `exemple.fr`) ainsi que le sélecteur DKIM (facultatif), puis cliquez sur **Tester**.
 
-Vous pouvez pré-remplir et lancer un audit en transmettant des paramètres d'URL :
-
-```
-https://votre-site.com/audit-email/?domain=exemple.fr
-https://votre-site.com/audit-email/?domain=exemple.fr&selector=google
-```
-
-| Paramètre | Alias acceptés | Description |
-| :--- | :--- | :--- |
-| `domain` | `d`, `domaine` | Domaine à analyser |
-| `selector` | `s` | Sélecteur DKIM (facultatif) |
-
-### Export PDF isolé
+### Export PDF
 
 Cliquez sur le bouton **🖨️ Imprimer / Exporter en PDF** situé à côté du score :
+
 * **Document isolé 100% autonome** : aucun widget WordPress environnant n'est imprimé.
 * **Mise en page A4 professionnelle** : typographie proportionnée, en-tête officiel avec date et domaine, saut de page intelligent évitant de couper les cartes.
 * **Détails techniques complets** : tous les blocs de données sont automatiquement dépliés pour le PDF.
@@ -352,6 +355,7 @@ Score global calculé sur **100 points** :
 > BIMI et TLS-RPT sont informatifs et ne pénalisent pas le score de sécurité pure.
 
 **Interprétation du score :**
+
 * **90 – 100** : 🏆 Configuration exemplaire
 * **75 – 89** : ✅ Bon niveau de sécurité
 * **50 – 74** : ⚠️ Passable, des améliorations importantes sont recommandées
@@ -452,7 +456,6 @@ Lors d'un appel AJAX vers `dns-checker.php`, le script retourne un objet JSON st
 - [x] DANE / TLSA (port 25)
 - [x] MTA-STS (DNS + validation du fichier HTTPS)
 - [x] TLS-RPT
-- [x] Lancement automatique via paramètres d'URL (`?domain=`)
 - [x] Export PDF autonome et isolé (sans interférence de thème)
 - [ ] Historique des derniers audits (localStorage)
 
@@ -517,4 +520,3 @@ Donnez une ⭐️ &nbsp;si ce projet vous plaît !
 <img src="https://raw.githubusercontent.com/thierry-laval/P00-mes-archives/master/images/octocat-oley.png" width="300px" alt="Octocat">
 
 **[⬆ Retour en haut](#auteur)**
-
