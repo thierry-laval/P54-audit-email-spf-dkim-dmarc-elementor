@@ -1978,7 +1978,8 @@ function checkBimi(string $domain, array $dmarcResult): array
 
 
 /**
- * Vérifie la réputation des serveurs MX sur les principales listes noires (RBL / DNSBL).
+ * Vérifie les adresses IPv4 associées aux serveurs MX sur plusieurs listes RBL / DNSBL.
+ * Ce contrôle porte sur les IP de réception résolues, pas sur les IP d'envoi réellement utilisées.
  *
  * Les Real-time Blackhole Lists (RBL) sont des bases de données réputées qui répertorient
  * les adresses IP identifiées comme émettrices de spam ou compromises.
@@ -2027,8 +2028,8 @@ function checkRbl(array $mxServers): array
     if (empty($ipList)) {
         return [
             'status'        => 'info',
-            'title'         => 'Listes Noires (RBL)',
-            'message'       => 'Aucune adresse IPv4 de serveur MX disponible pour tester la réputation.',
+            'title'         => 'RBL des IP MX',
+            'message'       => 'Aucune adresse IPv4 des serveurs MX n’a pu être testée sur les listes RBL. Ce contrôle ne renseigne pas sur les IP d’envoi.',
             'record'        => '',
             'suggested_dns' => null,
             'details'       => [
@@ -2078,8 +2079,8 @@ function checkRbl(array $mxServers): array
         }
         return [
             'status'        => 'error',
-            'title'         => 'Listes Noires (RBL)',
-            'message'       => 'Alerte réputation : ' . implode(' ', $warnings) . ' Vos emails risquent d’être refusés ou classés en spam.',
+            'title'         => 'RBL des IP MX',
+            'message'       => 'Une ou plusieurs IP de réception associées aux MX figurent sur une liste RBL : ' . implode(' ', $warnings) . ' Ce résultat ne permet pas de conclure sur la réputation des IP d’envoi réellement utilisées.',
             'record'        => implode(', ', array_unique(array_column($listedResults, 'ip'))),
             'suggested_dns' => null,
             'details'       => [
@@ -2092,8 +2093,8 @@ function checkRbl(array $mxServers): array
 
     return [
         'status'        => 'ok',
-        'title'         => 'Listes Noires (RBL)',
-        'message'       => 'Excellente réputation : vos serveurs MX ne figurent sur aucune des listes noires testées (' . implode(', ', array_keys($rbls)) . ').',
+        'title'         => 'RBL des IP MX',
+        'message'       => 'Aucune des IP MX testées ne figure sur les listes RBL consultées (' . implode(', ', array_keys($rbls)) . '). Ce résultat ne renseigne pas sur les IP d’envoi réellement utilisées.',
         'record'        => implode(', ', $ipList),
         'suggested_dns' => null,
         'details'       => [
@@ -2242,14 +2243,15 @@ function checkDane(array $mxServers): array
 
 
 /**
- * Calcule le score de sécurité e-mail global sur 100 points.
+ * Calcule un indicateur de configuration et de sécurité e-mail sur 100 points.
+ * Ce score ne mesure pas la délivrabilité et inclut 10 points liés aux RBL des IP MX testées.
  *
  * Barème équilibré sur 100 points :
  *   MX & Reverse DNS : ok=20, warning=10, error=0  (réception + PTR/FCrDNS)
  *   SPF              : ok=20, warning=10, error=0  (autorisation des expéditeurs)
  *   DKIM             : ok=20, warning=10, error=0  (signature cryptographique)
  *   DMARC            : reject=20, quarantine=16, none=10, warning=8, error=0 (politique anti-usurpation)
- *   Listes Noires RBL: ok=10, error=0              (réputation anti-spam des IPs)
+ *   Listes Noires RBL: ok=10, error=0              (résultat des IP MX testées, pas des IP d'envoi)
  *   DNSSEC           : ok=5                        (sécurité de la zone DNS)
  *   MTA-STS ou DANE  : ok=5                        (chiffrement garanti inter-serveurs)
  *
@@ -2297,7 +2299,7 @@ function calculateScore(array $results): int
         $score += 8;
     }
 
-    // Listes Noires / RBL (10 pts max) : réputation des IPs des serveurs MX.
+    // Listes RBL (10 pts max) : résultat des IP MX testées, sans mesure des IP d'envoi.
     if (isset($results['rbl']) && $results['rbl']['status'] === 'ok') {
         $score += 10;
     }

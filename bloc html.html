@@ -10,9 +10,8 @@
         <div class="dmc-intro">
             <strong>À quoi sert ce test ?</strong>
             <p>
-                Lorsque vous envoyez un email, plusieurs mécanismes permettent
-                de vérifier que le message vient bien de votre domaine et
-                d'améliorer sa délivrabilité.
+                Lorsque vous envoyez un email, plusieurs réglages DNS contribuent
+                à authentifier les messages envoyés au nom de votre domaine.
             </p>
             <p>
                 Ce test lit uniquement les informations DNS publiques de votre
@@ -1322,12 +1321,12 @@
             },
 
             rbl: {
-                importance: 'Indispensable',
+                importance: 'Complémentaire',
                 title: 'À quoi servent les Listes Noires (RBL) ?',
                 text:
-                    'Les RBL (Real-time Blackhole Lists) surveillent en temps réel les serveurs de messagerie émetteurs de spam ou compromis par des logiciels malveillants.',
+                    'Ce test consulte quelques listes RBL pour les adresses IPv4 associées aux serveurs MX de votre domaine. Il porte donc sur des IP de réception, pas sur les IP d’envoi utilisées pour vos messages.',
                 why:
-                    'Si l’adresse IP de votre serveur de messagerie est inscrite sur une liste noire, vos emails légitimes seront systématiquement refusés ou dirigés vers le dossier spam par Gmail, Outlook et Yahoo.'
+                    'Le résultat renseigne uniquement sur les IP MX testées. Il ne permet pas de connaître la réputation des IP d’envoi ni de prédire le classement de vos messages.'
             },
 
             dnssec: {
@@ -1430,13 +1429,13 @@
 
             rbl: {
                 ok:
-                    'Excellente réputation : l’adresse IP de vos serveurs de messagerie est saine et ne figure sur aucune des listes noires réputées testées.',
+                    'Aucune des adresses IPv4 MX testées ne figure sur les listes RBL consultées. Cela ne renseigne pas sur les IP d’envoi.',
                 warning:
-                    'Attention : une ou plusieurs adresses IP de vos serveurs de messagerie apparaissent sur une liste noire anti-spam.',
+                    'Une ou plusieurs adresses IPv4 associées aux MX figurent sur une liste RBL. Le résultat concerne ces IP de réception uniquement.',
                 error:
-                    'Alerte réputation : vos serveurs de messagerie sont répertoriés sur une liste noire. Vos emails risquent fortement d’être rejetés ou mis en spam.',
+                    'Une ou plusieurs adresses IPv4 MX testées sont répertoriées sur une liste RBL. Ce contrôle ne permet pas de conclure sur les IP d’envoi réellement utilisées.',
                 info:
-                    'Aucune adresse IP de serveur de messagerie n’a pu être testée.'
+                    'Aucune adresse IPv4 associée aux MX n’a pu être testée sur les listes RBL.'
             },
 
             dnssec: {
@@ -1508,7 +1507,7 @@
                 'Si vous souhaitez afficher votre logo dans Gmail et Yahoo, publiez un enregistrement default._bimi avec votre logo au format SVG Tiny P.S. et assurez-vous que DMARC est au minimum en p=quarantine (pct=100) ou p=reject.',
 
             rbl:
-                'Contactez votre hébergeur ou prestataire de messagerie pour demander le délistage de votre adresse IP ou pour qu’une nouvelle adresse IP saine vous soit attribuée.',
+                'Vérifiez auprès du fournisseur du serveur MX concerné si l’inscription de cette IP de réception nécessite une action. Ce résultat ne teste pas la réputation des IP d’envoi.',
 
             dnssec:
                 'Activez DNSSEC depuis l’espace client de votre bureau d’enregistrement de domaine (Registrar) pour sécuriser l’authenticité de votre zone DNS.',
@@ -2569,7 +2568,7 @@
                     html +=
                         '<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-top:10px;">' +
                         '<div class="dmc-summary-score" style="margin-top:0;">' +
-                        'Score de sécurité email : ' +
+                        'Score de configuration e-mail : ' +
                         escapeHtml(result.score) + ' / 100' +
                         '</div>' +
                         '<button type="button" class="dmc-btn-print" onclick="dmcPrintReport()">' +

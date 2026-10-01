@@ -68,7 +68,7 @@ _`Début du projet le 30/09/2025`_ — Version du script : 2.0.0 (25/09/2026)
 
 ## À propos du projet
 
-Cet outil analyse en profondeur la configuration e-mail publique, la réputation et la sécurité DNS d'un nom de domaine **sans envoyer le moindre e-mail** et **sans stocker aucune donnée**. Il produit un rapport complet et pédagogique, accessible aussi bien aux débutants qu'aux professionnels.
+Cet outil fournit un pré-audit pédagogique de la configuration DNS et de certains mécanismes de sécurité e-mail d'un nom de domaine, **sans envoyer le moindre e-mail** et **sans stocker aucune donnée**. Il ne constitue pas un test complet de délivrabilité. Le rapport est conçu pour donner un premier niveau d'information, accessible aux clients comme aux professionnels.
 
 Cet outil fonctionne exclusivement dans **WordPress via le widget HTML d'Elementor**, en communiquant avec le backend PHP dédié (`dns-checker.php`) hébergé sur votre serveur.
 
@@ -77,7 +77,7 @@ Une mauvaise configuration e-mail peut entraîner :
 * 📭 Des e-mails légitimes qui arrivent directement en boîte spam
 * 🏴‍☠️ Des pirates qui envoient des faux e-mails en usurpant votre identité
 * ❌ Des e-mails rejetés par les serveurs de réception (Gmail, Outlook, Yahoo)
-* 📉 L'inscription de vos adresses IP sur des listes noires mondiales de spammeurs
+* 📉 L'inscription d'une IP d'envoi sur une liste noire, à vérifier auprès du service qui émet réellement les messages
 
 ### Construit avec
 
@@ -183,7 +183,7 @@ Le widget Elementor contient **l'interface utilisateur** :
 | **SPF** | 🔴 Indispensable | Enregistrement unique, récursion RFC 7208, limite 10 lookups, `+all` dangereux, arbre des `include:` |
 | **DKIM** | 🔴 Indispensable | 18 sélecteurs testés automatiquement, taille de clé RSA (1024 bits dépréciée), détection révocation |
 | **DMARC** | 🔴 Indispensable | Tags `v p sp pct adkim aspf rua ruf`, héritage sous-domaines, rapports externes RFC 7489 |
-| **Listes Noires (RBL)** | 🔴 Indispensable | Réputation anti-spam des IPs des serveurs MX (Spamcop, Barracuda, PSBL, UCEPROTECT) |
+| **Listes Noires (RBL)** | 🟡 Complémentaire | Vérification RBL des adresses IPv4 associées aux MX (IP de réception), pas des IP d'envoi réellement utilisées |
 | **DNSSEC** | 🟡 Sécurité DNS | Signature cryptographique de la zone DNS contre l'empoisonnement de cache (Cache Poisoning) |
 | **BIMI** | 🟡 Optionnel / Marque | Logo SVG officiel, certificat VMC, compatibilité stricte DMARC requise |
 | **DANE / TLSA** | 🟡 Optionnel / Avancé | Authentification DNS du certificat SSL/TLS des serveurs de messagerie (port 25) |
@@ -260,7 +260,7 @@ Le widget Elementor contient **l'interface utilisateur** :
 
 **Ce que ça vérifie :**
 
-* Interrogation par DNS inverse des adresses IPv4 de vos serveurs de messagerie (MX).
+* Interrogation par DNS inverse des adresses IPv4 associées aux serveurs MX (IP de réception).
 * Consultation instantanée des principales listes noires publiques :
   * **Spamcop** (`bl.spamcop.net`)
   * **Barracuda Reputation Network** (`b.barracudacentral.org`)
@@ -337,9 +337,9 @@ Cliquez sur le bouton **🖨️ Imprimer / Exporter en PDF** situé à côté du
 
 ---
 
-## Score de sécurité
+## Score de configuration e-mail
 
-Score global calculé sur **100 points** :
+Indicateur de configuration et de sécurité calculé sur **100 points**. Il ne mesure pas la délivrabilité et ne garantit pas le placement des messages en boîte de réception :
 
 | Contrôle | Points max | Critères |
 | :--- | :---: | :--- |
@@ -347,12 +347,12 @@ Score global calculé sur **100 points** :
 | **SPF** | 20 pts | ok=20 · warning=10 · error=0 |
 | **DKIM** | 20 pts | ok=20 · warning=10 · error=0 |
 | **DMARC** | 20 pts | reject=20 · quarantine=16 · none=10 · warning=8 · error=0 |
-| **Listes Noires (RBL)** | 10 pts | ok=10 (propre) · error=0 (listé) |
+| **Listes Noires (RBL)** | 10 pts | ok=10 · error=0, selon le résultat des IP MX testées uniquement |
 | **DNSSEC** | 5 pts | ok=5 (actif) |
 | **Chiffrement garanti** | 5 pts | MTA-STS ou DANE ok = 5 |
 
 > [!NOTE]
-> BIMI et TLS-RPT sont informatifs et ne pénalisent pas le score de sécurité pure.
+> BIMI et TLS-RPT sont informatifs et ne pénalisent pas ce score. Le contrôle RBL porte sur les IP MX résolues et ne permet pas d'évaluer la réputation des IP d'envoi.
 
 **Interprétation du score :**
 
